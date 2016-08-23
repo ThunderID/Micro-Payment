@@ -117,15 +117,11 @@ app.get('/setup', function(req, res) {
 		conn.createChannel(function(err, ch) {
 			var q 	= 'thunderpayment';
 
-			ch.assertQueue(q, {durable: false});
-			// Note: on Node 6 Buffer.from(msg) should be used
+			var msg = '{"date": "2016-01-01","amount": "80000"}';
 
-			var msgqueue = {date: "2016-01-01", amount: "80000" };
-		
-			ch.sendToQueue(q, new Buffer(msgqueue.toString()));
-			console.log(" [x] Sent 'Thunder Payment!'");
-
-			// setTimeout(function() { conn.close(); process.exit(0) }, 20000);
+			ch.assertExchange(q, 'fanout', {durable: false});
+			ch.publish(q, '', new Buffer(msg));
+			console.log(" [x] Sent %s", msg);
 		});
 	});
 
