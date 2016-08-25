@@ -114,7 +114,7 @@ app.post('/payment', function(req, res) {
 			var key 	= (args.length > 0) ? args[0] : 'anonymous.info';
 			var msg 	= '{"date": "'+req.param('date')+'","amount": "'+req.param('amount')+'"}';
 
-			ch.assertExchange(ex, 'topic', {durable: false});
+			ch.assertExchange(ex, 'fanout', {durable: false});
 			ch.publish(ex, key, new Buffer(msg));
 			console.log(" [x] Sent %s:'%s'", key, msg);
 		});
