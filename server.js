@@ -82,23 +82,17 @@ apiRoutes.get('/', function(req, res) {
 
 // route to return all Payments (GET http://localhost:2222/api/Payments)
 apiRoutes.get('/payments', function(req, res) {
-  	Payment.find({}, function(err, Payments) {
-	res.json(Payments);
-  });
-});   
+	Payment.find({}, function(err, Payments) {
+		res.json(Payments);
+	});
+});
 
-// apply the routes to our application with the prefix /api
-app.use('/api', apiRoutes);
-
-// =======================
-// initial Payment ===
-// =======================
-app.get('/setup', function(req, res) {
-
-	// create a sample user
+app.post('/payment', function(req, res) {
 	var tlab = new Payment({ 
-		date: '2016-01-01', 
-		amount: '80000'
+		date: req.param('date'), 
+		amount: req.param('amount'),
+		refnumber: req.param('refnumber'),
+		method: req.param('method')
 	});
 
 	// save the sample Payment
@@ -113,21 +107,23 @@ app.get('/setup', function(req, res) {
 		conn.createChannel(function(err, ch) {});
 	});
 
-	amqp.connect('amqp://localhost', function(err, conn){
+	amqp.connect('amqp://localhost', function(err, conn) {
 		conn.createChannel(function(err, ch) {
-			var q 	= 'thunderpayment';
+			var ex 		= 'tlab.payment.accepted';
+			var args 	= process.argv.slice(2);
+			var key 	= (args.length > 0) ? args[0] : 'anonymous.info';
+			var msg 	= '{"date": "'+req.param('date')+'","amount": "'+req.param('amount')+'"}';
 
-			var msg = '{"date": "2016-01-01","amount": "80000"}';
-
-			ch.assertExchange(q, 'fanout', {durable: false});
-			ch.publish(q, '', new Buffer(msg));
-			console.log(" [x] Sent %s", msg);
+			ch.assertExchange(ex, 'topic', {durable: false});
+			ch.publish(ex, key, new Buffer(msg));
+			console.log(" [x] Sent %s:'%s'", key, msg);
 		});
 	});
-
 });
 
-// =======================
+// apply the routes to our application with the prefix /api
+app.use('/api', apiRoutes);
+
 // start the server ======
 // =======================
 app.listen(port);
