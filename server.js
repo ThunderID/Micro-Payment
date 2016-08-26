@@ -87,7 +87,7 @@ apiRoutes.get('/payments', function(req, res) {
 	});
 });
 
-app.post('/payment', function(req, res) {
+app.post('/payments', function(req, res) {
 	var tlab = new Payment({ 
 		date: req.param('date'), 
 		amount: req.param('amount'),
@@ -109,12 +109,12 @@ app.post('/payment', function(req, res) {
 
 	amqp.connect('amqp://localhost', function(err, conn) {
 		conn.createChannel(function(err, ch) {
-			var ex 		= 'tlab.payment.accepted';
+			var ex 		= 'topic_logs';
 			var args 	= process.argv.slice(2);
-			var key 	= (args.length > 0) ? args[0] : 'anonymous.info';
+			var key 	= 'tlab.payment.accepted';
 			var msg 	= '{"date": "'+req.param('date')+'","amount": "'+req.param('amount')+'"}';
 
-			ch.assertExchange(ex, 'fanout', {durable: false});
+			ch.assertExchange(ex, 'topic', {durable: false});
 			ch.publish(ex, key, new Buffer(msg));
 			console.log(" [x] Sent %s:'%s'", key, msg);
 		});
